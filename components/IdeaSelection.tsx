@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { VideoIdea } from '../types';
-import { PlayCircle, TrendingUp, Sparkles, Loader2 } from 'lucide-react';
+import { PlayCircle, TrendingUp, Sparkles, Loader2, PenTool, Plus } from 'lucide-react';
 
 interface IdeaSelectionProps {
   ideas: VideoIdea[];
@@ -10,13 +10,58 @@ interface IdeaSelectionProps {
 }
 
 export const IdeaSelection: React.FC<IdeaSelectionProps> = ({ ideas, onSelect, isWriting, selectedId }) => {
+  const [customTitle, setCustomTitle] = useState('');
+
+  const handleCustomSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (customTitle.trim() && !isWriting) {
+      onSelect({
+        id: `custom-${Date.now()}`,
+        title: customTitle,
+        hook: 'Custom User Idea',
+        predictedCTR: 'N/A',
+        reasoning: 'User generated concept'
+      });
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 animate-fade-in">
        <div className="mb-8">
          <h2 className="text-3xl font-bold text-white mb-2">Viral Concepts</h2>
-         <p className="text-slate-400">Select a title to generate the full script.</p>
+         <p className="text-slate-400">Select a generated title or write your own to start the script.</p>
        </div>
 
+       {/* Custom Title Input */}
+       <div className="mb-10 bg-gradient-to-r from-slate-800 to-slate-900 p-6 rounded-2xl border border-slate-700 shadow-xl">
+          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            <PenTool className="w-5 h-5 text-red-400" /> Have your own idea?
+          </h3>
+          <form onSubmit={handleCustomSubmit} className="flex gap-4">
+            <input 
+              type="text"
+              value={customTitle}
+              onChange={(e) => setCustomTitle(e.target.value)}
+              placeholder="Enter your custom video title here..."
+              className="flex-1 bg-slate-950/50 border border-slate-600 text-white rounded-xl px-4 py-3 focus:ring-2 focus:ring-red-500 outline-none transition-all placeholder:text-slate-600"
+              disabled={isWriting}
+            />
+            <button 
+              type="submit"
+              disabled={!customTitle.trim() || isWriting}
+              className="bg-white text-slate-900 hover:bg-slate-100 px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              {isWriting && selectedId?.startsWith('custom') ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Plus className="w-5 h-5" />
+              )}
+              Create Script
+            </button>
+          </form>
+       </div>
+
+       {/* AI Ideas Grid */}
        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
          {ideas.map((idea) => {
             const isSelected = selectedId === idea.id;
