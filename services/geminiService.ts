@@ -1,5 +1,6 @@
+
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { ChannelProfile, VideoIdea, GeneratedScript } from "../types";
+import { ChannelProfile, VideoIdea, GeneratedScript, VideoMetadata } from "../types";
 
 // Initialize Gemini Client
 const getAiClient = () => {
@@ -286,3 +287,54 @@ export const generateSpeech = async (text: string, voiceName: string): Promise<B
   // Convert raw PCM to WAV blob so it is playable
   return pcmToWav(bytes, 24000); 
 };
+
+/**
+ * Step 5: Generate SEO Metadata (Description, Tags, Hashtags)
+ */
+export const generateVideoMetadata = async (title: string, scriptContent: string): Promise<VideoMetadata> => {
+    const ai = getAiClient();
+    
+    const prompt = `
+      Based on the video title "${title}" and the script provided below, generate optimized YouTube metadata.
+      
+      Script Preview:
+      ${scriptContent.substring(0, 5000)}...
+      
+      Generate a JSON object with:
+      1. 'description': A compelling, SEO-friendly video description (max 200 words). Include the hook in the first line.
+      2. 'tags': An array of 15-20 high-traffic, relevant tags/keywords.
+      3. 'hashtags': An array of 3-5 trending hashtags (e.g. #Shorts #AI).
+      4. 'pinnedComment': An engaging question to ask the audience to boost comments.
+    `;
+  
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            description: { type: Type.STRING },
+            tags: { 
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            },
+            hashtags: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            },
+            pinnedComment: { type: Type.STRING }
+          }
+        }
+      }
+    });
+  
+    if (!response.text) throw new Error("Failed to generate metadata.");
+    
+    try {
+      return JSON.parse(response.text) as VideoMetadata;
+    } catch(e) {
+      throw new Error("Failed to parse metadata.");
+    }
+  };

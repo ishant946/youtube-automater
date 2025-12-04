@@ -1,3 +1,4 @@
+
 export interface ChannelProfile {
   channelName: string;
   niche: string;
@@ -34,6 +35,13 @@ export interface GeneratedScript {
   title: string;
   sections: ScriptSection[];
   totalEstimatedDuration: string;
+}
+
+export interface VideoMetadata {
+  description: string;
+  tags: string[];
+  hashtags: string[];
+  pinnedComment: string;
 }
 
 export enum AppStep {
