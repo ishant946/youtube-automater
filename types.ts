@@ -58,3 +58,11 @@ export const VOICES: VoiceOption[] = [
   { name: 'Fenrir', label: 'Fenrir', gender: 'Male', style: 'Strong, Authoritative' },
   { name: 'Zephyr', label: 'Zephyr', gender: 'Female', style: 'Friendly, Upbeat' },
 ];
+
+export interface ScriptPart {
+  index: number;
+  text: string;
+  audioUrl: string | null;
+  isAudioLoading: boolean;
+  audioError: boolean;
+}
