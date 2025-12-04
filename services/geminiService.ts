@@ -167,6 +167,45 @@ export const generateScriptStream = async function* (title: string, profile: Cha
 };
 
 /**
+ * Alternate Step 3: Generate Script from Reference Text (Manual Workflow)
+ */
+export const generateScriptFromReferenceStream = async function* (topic: string, referenceTranscript: string) {
+  const ai = getAiClient();
+  
+  const prompt = `
+    Write a complete YouTube narration script for the topic: "${topic}".
+    
+    Use the following Reference Transcript as a guide for TONE, VOCABULARY, PACING, and STRUCTURE:
+    ---
+    ${referenceTranscript.substring(0, 10000)}
+    ---
+    
+    STRICT FORMATTING RULES:
+    - OUTPUT PLAIN TEXT ONLY.
+    - DO NOT use Markdown formatting (no ## headers, no **bold**, no bullet points).
+    - DO NOT include visual cues, camera directions, stage notes, or scene descriptions.
+    - DO NOT include speaker labels.
+    - Write ONLY the spoken words for the voiceover.
+    
+    Start directly with an engaging hook related to ${topic}.
+  `;
+
+  const stream = await ai.models.generateContentStream({
+    model: "gemini-3-pro-preview", 
+    contents: prompt,
+    config: {
+        thinkingConfig: { thinkingBudget: 2048 },
+    }
+  });
+
+  for await (const chunk of stream) {
+    if (chunk.text) {
+      yield chunk.text;
+    }
+  }
+};
+
+/**
  * Helper: Convert Raw PCM data to WAV Blob
  * Gemini Live API and TTS models return raw PCM (no header).
  * We must wrap it in a WAV container to be playable in browsers.

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ChannelProfile, VideoIdea, AppStep } from './types';
-import { analyzeChannel, generateViralTitles, generateScriptStream } from './services/geminiService';
+import { analyzeChannel, generateViralTitles, generateScriptStream, generateScriptFromReferenceStream } from './services/geminiService';
 import { InputSection } from './components/InputSection';
 import { StyleDashboard } from './components/StyleDashboard';
 import { IdeaSelection } from './components/IdeaSelection';
@@ -36,6 +36,41 @@ const App: React.FC = () => {
     }
   };
 
+  // Step 1.5: Manual Create Script (Shortcut)
+  const handleCreateFromReference = async (topic: string, transcript: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    // Create a dummy idea for the modal
+    const dummyIdea: VideoIdea = {
+        id: `manual-${Date.now()}`,
+        title: topic,
+        hook: 'Manual Creation',
+        predictedCTR: 'N/A',
+        reasoning: 'Generated from reference text'
+    };
+    
+    setSelectedIdea(dummyIdea);
+    setIsModalOpen(true);
+    setScriptContent("");
+    setIsScriptGenerating(true);
+    setIsLoading(false); // Stop main loading as modal takes over
+
+    try {
+        const stream = generateScriptFromReferenceStream(topic, transcript);
+        let fullText = "";
+        for await (const chunk of stream) {
+            fullText += chunk;
+            setScriptContent(fullText);
+        }
+    } catch (err: any) {
+        setError("Failed to generate script from reference. Try again.");
+        setIsModalOpen(false); // Close modal on error to show banner
+    } finally {
+        setIsScriptGenerating(false);
+    }
+  };
+
   // Step 2: Generate Ideas
   const handleGenerateTitles = async () => {
     if (!profile) return;
@@ -53,7 +88,23 @@ const App: React.FC = () => {
 
   // Step 3: Stream Script
   const generateScript = async (idea: VideoIdea) => {
-    if (!profile) return;
+    // If it's a manual idea without a profile, we shouldn't be here via this function
+    // unless we adapt this function to handle re-generation of manual scripts.
+    // For now, re-generation relies on this function. 
+    // If it's manual, we can't really "regenerate" easily without the original transcript reference.
+    // We will assume regeneration works best for Profile-based flows.
+    
+    if (!profile) {
+        // If we are here and profile is null, it's likely a manual script regeneration.
+        // For simplicity in this version, we will prevent re-generation of manual scripts 
+        // or just let it fail gracefully/alert user. 
+        // A better fix would be storing the reference transcript in the idea object.
+        if (idea.id.startsWith('manual-')) {
+             // For now, disable regeneration for manual scripts or handle differently
+             return; 
+        }
+        return; 
+    }
     
     setIsScriptGenerating(true);
     setScriptContent("");
@@ -82,7 +133,15 @@ const App: React.FC = () => {
 
   const handleRegenerate = () => {
     if (selectedIdea) {
-      generateScript(selectedIdea);
+        // Special case for manual scripts: if we don't have the original transcript stored,
+        // we can't regenerate with the same style. 
+        if (selectedIdea.id.startsWith('manual-')) {
+            // Ideally we'd store the transcript, but for now we'll just not regenerate or 
+            // warn the user.
+            setError("Regeneration is currently only available for Channel Analysis workflows.");
+            return;
+        }
+        generateScript(selectedIdea);
     }
   };
 
@@ -136,7 +195,11 @@ const App: React.FC = () => {
       {/* Main Content */}
       <main>
         {step === AppStep.INPUT && (
-            <InputSection onAnalyze={handleAnalyze} isLoading={isLoading} />
+            <InputSection 
+                onAnalyze={handleAnalyze} 
+                onCreateScript={handleCreateFromReference}
+                isLoading={isLoading} 
+            />
         )}
         
         {step === AppStep.DASHBOARD && profile && (
