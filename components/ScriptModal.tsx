@@ -1,5 +1,6 @@
 
-import React, { useEffect, useRef, useState } from 'react';
+import * as React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X, Copy, RefreshCw, Save, Loader2, Check, Mic, Play, Download, Volume2, Film, Search, Hash, MessageSquare, Clipboard } from 'lucide-react';
 import { VideoIdea, VOICES, VoiceOption, ScriptPart, VideoMetadata } from '../types';
 import { generateSpeech, generateVideoMetadata } from '../services/geminiService';
@@ -137,6 +138,16 @@ export const ScriptModal: React.FC<ScriptModalProps> = ({
         const blob = await generateSpeech(text, selectedVoice.name);
         const url = URL.createObjectURL(blob);
         setScriptParts(prev => prev.map(p => p.index === index ? { ...p, audioUrl: url, isAudioLoading: false } : p));
+        
+        // Auto-download logic
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `part_${index + 1}_voiceover.wav`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
       } catch (err) {
         console.error("Audio generation error", err);
         setScriptParts(prev => prev.map(p => p.index === index ? { ...p, isAudioLoading: false, audioError: true } : p));
@@ -153,6 +164,16 @@ export const ScriptModal: React.FC<ScriptModalProps> = ({
           const blob = await generateSpeech(part.text, selectedVoice.name);
           const url = URL.createObjectURL(blob);
           setScriptParts(prev => prev.map(p => p.index === index ? { ...p, audioUrl: url, isAudioLoading: false } : p));
+
+          // Auto-download logic
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `part_${index + 1}_voiceover.wav`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+
       } catch (err) {
           setScriptParts(prev => prev.map(p => p.index === index ? { ...p, isAudioLoading: false, audioError: true } : p));
       }

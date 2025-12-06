@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { ChannelProfile } from '../types';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { BarChart2, Clock, Hash, Users, Zap, PenTool } from 'lucide-react';

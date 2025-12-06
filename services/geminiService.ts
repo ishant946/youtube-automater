@@ -129,7 +129,7 @@ export const generateViralTitles = async (profile: ChannelProfile): Promise<Vide
  * Step 3 (Stream): Generate a Full Script stream based on a selected title.
  * Returns an async generator for real-time typing effect.
  */
-export const generateScriptStream = async function* (title: string, profile: ChannelProfile) {
+export const generateScriptStream = async function* (title: string, profile: ChannelProfile, lengthConstraint: string = "Standard (approx 1000 words)") {
   const ai = getAiClient();
   
   const prompt = `
@@ -137,6 +137,9 @@ export const generateScriptStream = async function* (title: string, profile: Cha
     
     You MUST emulate the style of the channel described below:
     ${JSON.stringify(profile)}
+    
+    CONSTRAINT:
+    The script length should be: ${lengthConstraint}.
     
     STRICT FORMATTING RULES:
     - OUTPUT PLAIN TEXT ONLY.
@@ -170,7 +173,7 @@ export const generateScriptStream = async function* (title: string, profile: Cha
 /**
  * Alternate Step 3: Generate Script from Reference Text (Manual Workflow)
  */
-export const generateScriptFromReferenceStream = async function* (topic: string, referenceTranscript: string) {
+export const generateScriptFromReferenceStream = async function* (topic: string, referenceTranscript: string, lengthConstraint: string = "Standard (approx 1000 words)") {
   const ai = getAiClient();
   
   const prompt = `
@@ -180,6 +183,9 @@ export const generateScriptFromReferenceStream = async function* (topic: string,
     ---
     ${referenceTranscript.substring(0, 10000)}
     ---
+
+    CONSTRAINT:
+    The script length should be: ${lengthConstraint}.
     
     STRICT FORMATTING RULES:
     - OUTPUT PLAIN TEXT ONLY.

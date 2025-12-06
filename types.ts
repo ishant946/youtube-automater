@@ -74,3 +74,11 @@ export interface ScriptPart {
   isAudioLoading: boolean;
   audioError: boolean;
 }
+
+export interface SavedProject {
+  id: string;
+  name: string;
+  timestamp: number;
+  profile: ChannelProfile | null;
+  ideas: VideoIdea[];
+}

@@ -1,16 +1,29 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+import { useState } from 'react';
 import { VideoIdea } from '../types';
-import { PlayCircle, TrendingUp, Sparkles, Loader2, PenTool, Plus } from 'lucide-react';
+import { PlayCircle, TrendingUp, Sparkles, Loader2, PenTool, Plus, Save, Clock, Settings } from 'lucide-react';
 
 interface IdeaSelectionProps {
   ideas: VideoIdea[];
   onSelect: (idea: VideoIdea) => void;
   isWriting: boolean;
   selectedId: string | null;
+  scriptLength: string;
+  setScriptLength: (len: string) => void;
+  onSaveProject: () => void;
 }
 
-export const IdeaSelection: React.FC<IdeaSelectionProps> = ({ ideas, onSelect, isWriting, selectedId }) => {
+export const IdeaSelection: React.FC<IdeaSelectionProps> = ({ 
+    ideas, 
+    onSelect, 
+    isWriting, 
+    selectedId,
+    scriptLength,
+    setScriptLength,
+    onSaveProject
+}) => {
   const [customTitle, setCustomTitle] = useState('');
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
 
   const handleCustomSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,8 +38,55 @@ export const IdeaSelection: React.FC<IdeaSelectionProps> = ({ ideas, onSelect, i
     }
   };
 
+  const handleSaveClick = () => {
+    onSaveProject();
+    setShowSaveConfirm(true);
+    setTimeout(() => setShowSaveConfirm(false), 2000);
+  };
+
+  const LENGTH_OPTIONS = [
+    { label: 'Short (Shorts/TikTok)', value: 'Short (approx 150-300 words, under 60s)' },
+    { label: 'Standard (5-8 mins)', value: 'Standard (approx 800-1200 words)' },
+    { label: 'Long Form (10+ mins)', value: 'Long (approx 1500-2000 words)' },
+    { label: 'Deep Dive (20+ mins)', value: 'Extensive (approx 3000+ words)' },
+  ];
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-12 animate-fade-in">
+       {/* Toolbar */}
+       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 bg-slate-800/50 p-4 rounded-xl border border-slate-700 backdrop-blur-sm">
+         <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-slate-400 text-sm font-semibold uppercase tracking-wider">
+                <Settings className="w-4 h-4" /> Script Settings:
+            </div>
+            <div className="relative">
+                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <select 
+                    value={scriptLength}
+                    onChange={(e) => setScriptLength(e.target.value)}
+                    className="bg-slate-900 border border-slate-600 text-white text-sm rounded-lg pl-9 pr-4 py-2 outline-none focus:border-red-500 transition-colors"
+                    disabled={isWriting}
+                >
+                    {LENGTH_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                </select>
+            </div>
+         </div>
+
+         <button 
+            onClick={handleSaveClick}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                showSaveConfirm 
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/50' 
+                : 'bg-slate-700 hover:bg-slate-600 text-white border border-slate-600'
+            }`}
+         >
+            {showSaveConfirm ? <Settings className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+            {showSaveConfirm ? 'Saved!' : 'Save Style & Ideas'}
+         </button>
+       </div>
+
        <div className="text-center mb-12">
          <h2 className="text-4xl font-bold text-white mb-4">Viral Concepts</h2>
          <p className="text-slate-400 text-lg max-w-2xl mx-auto">
@@ -34,7 +94,7 @@ export const IdeaSelection: React.FC<IdeaSelectionProps> = ({ ideas, onSelect, i
          </p>
        </div>
 
-       {/* Custom Title Input - Sleek Bar Design */}
+       {/* Custom Title Input */}
        <div className="max-w-3xl mx-auto mb-16 relative z-10">
           <div className="bg-slate-800/80 p-2 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-xl">
             <form onSubmit={handleCustomSubmit} className="flex flex-col sm:flex-row gap-2">

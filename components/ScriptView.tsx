@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import { GeneratedScript, ScriptSection } from '../types';
 import { Download, Copy, ArrowLeft, FileText, Check } from 'lucide-react';
 

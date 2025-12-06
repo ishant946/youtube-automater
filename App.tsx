@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { ChannelProfile, VideoIdea, AppStep } from './types';
+
+import * as React from 'react';
+import { useState, useEffect } from 'react';
+import { ChannelProfile, VideoIdea, AppStep, SavedProject } from './types';
 import { analyzeChannel, generateViralTitles, generateScriptStream, generateScriptFromReferenceStream } from './services/geminiService';
 import { InputSection } from './components/InputSection';
 import { StyleDashboard } from './components/StyleDashboard';
@@ -15,11 +17,58 @@ const App: React.FC = () => {
   const [profile, setProfile] = useState<ChannelProfile | null>(null);
   const [ideas, setIdeas] = useState<VideoIdea[]>([]);
   
+  // Script Configuration
+  const [scriptLength, setScriptLength] = useState("Standard (approx 800-1200 words)");
+  
   // Script Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedIdea, setSelectedIdea] = useState<VideoIdea | null>(null);
   const [scriptContent, setScriptContent] = useState("");
   const [isScriptGenerating, setIsScriptGenerating] = useState(false);
+
+  // Saved Projects State
+  const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('tubeGeniusProjects');
+    if (saved) {
+      try {
+        setSavedProjects(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to load saved projects");
+      }
+    }
+  }, []);
+
+  // Save Project Handler
+  const handleSaveProject = () => {
+    if (!profile) return;
+    
+    const newProject: SavedProject = {
+        id: Date.now().toString(),
+        name: profile.channelName,
+        timestamp: Date.now(),
+        profile,
+        ideas
+    };
+
+    const updatedProjects = [newProject, ...savedProjects.filter(p => p.name !== profile.channelName)]; // Avoid dupes by name, prefer recent
+    setSavedProjects(updatedProjects);
+    localStorage.setItem('tubeGeniusProjects', JSON.stringify(updatedProjects));
+  };
+
+  const handleLoadProject = (project: SavedProject) => {
+      setProfile(project.profile);
+      setIdeas(project.ideas);
+      setStep(AppStep.IDEATION);
+  };
+
+  const handleDeleteProject = (id: string) => {
+      const updated = savedProjects.filter(p => p.id !== id);
+      setSavedProjects(updated);
+      localStorage.setItem('tubeGeniusProjects', JSON.stringify(updated));
+  };
 
   // Step 1: Analyze Channel
   const handleAnalyze = async (input: string) => {
@@ -37,7 +86,7 @@ const App: React.FC = () => {
   };
 
   // Step 1.5: Manual Create Script (Shortcut)
-  const handleCreateFromReference = async (topic: string, transcript: string) => {
+  const handleCreateFromReference = async (topic: string, transcript: string, matchLength: boolean) => {
     setIsLoading(true);
     setError(null);
 
@@ -56,8 +105,15 @@ const App: React.FC = () => {
     setIsScriptGenerating(true);
     setIsLoading(false); // Stop main loading as modal takes over
 
+    // Determine Length Constraint
+    let effectiveLength = scriptLength;
+    if (matchLength) {
+        const wordCount = transcript.trim().split(/\s+/).length;
+        effectiveLength = `Approximately ${wordCount} words (matching the reference material length)`;
+    }
+
     try {
-        const stream = generateScriptFromReferenceStream(topic, transcript);
+        const stream = generateScriptFromReferenceStream(topic, transcript, effectiveLength);
         let fullText = "";
         for await (const chunk of stream) {
             fullText += chunk;
@@ -69,6 +125,22 @@ const App: React.FC = () => {
     } finally {
         setIsScriptGenerating(false);
     }
+  };
+
+  // Step 1.75: Direct Text to Audio (No AI Writing)
+  const handleOpenStudio = (title: string, script: string) => {
+    const dummyIdea: VideoIdea = {
+        id: `voice-${Date.now()}`,
+        title: title,
+        hook: 'Direct Text to Voice',
+        predictedCTR: 'N/A',
+        reasoning: 'User provided script'
+    };
+    
+    setSelectedIdea(dummyIdea);
+    setScriptContent(script);
+    setIsModalOpen(true);
+    setIsScriptGenerating(false); // Content is already provided
   };
 
   // Step 2: Generate Ideas
@@ -88,19 +160,8 @@ const App: React.FC = () => {
 
   // Step 3: Stream Script
   const generateScript = async (idea: VideoIdea) => {
-    // If it's a manual idea without a profile, we shouldn't be here via this function
-    // unless we adapt this function to handle re-generation of manual scripts.
-    // For now, re-generation relies on this function. 
-    // If it's manual, we can't really "regenerate" easily without the original transcript reference.
-    // We will assume regeneration works best for Profile-based flows.
-    
     if (!profile) {
-        // If we are here and profile is null, it's likely a manual script regeneration.
-        // For simplicity in this version, we will prevent re-generation of manual scripts 
-        // or just let it fail gracefully/alert user. 
-        // A better fix would be storing the reference transcript in the idea object.
-        if (idea.id.startsWith('manual-')) {
-             // For now, disable regeneration for manual scripts or handle differently
+        if (idea.id.startsWith('manual-') || idea.id.startsWith('voice-')) {
              return; 
         }
         return; 
@@ -111,7 +172,7 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      const stream = generateScriptStream(idea.title, profile);
+      const stream = generateScriptStream(idea.title, profile, scriptLength);
       
       let fullText = "";
       for await (const chunk of stream) {
@@ -133,11 +194,7 @@ const App: React.FC = () => {
 
   const handleRegenerate = () => {
     if (selectedIdea) {
-        // Special case for manual scripts: if we don't have the original transcript stored,
-        // we can't regenerate with the same style. 
-        if (selectedIdea.id.startsWith('manual-')) {
-            // Ideally we'd store the transcript, but for now we'll just not regenerate or 
-            // warn the user.
+        if (selectedIdea.id.startsWith('manual-') || selectedIdea.id.startsWith('voice-')) {
             setError("Regeneration is currently only available for Channel Analysis workflows.");
             return;
         }
@@ -198,7 +255,11 @@ const App: React.FC = () => {
             <InputSection 
                 onAnalyze={handleAnalyze} 
                 onCreateScript={handleCreateFromReference}
-                isLoading={isLoading} 
+                onOpenStudio={handleOpenStudio}
+                isLoading={isLoading}
+                savedProjects={savedProjects}
+                onLoadProject={handleLoadProject}
+                onDeleteProject={handleDeleteProject}
             />
         )}
         
@@ -214,8 +275,11 @@ const App: React.FC = () => {
             <IdeaSelection 
                 ideas={ideas} 
                 onSelect={handleSelectIdea} 
-                isWriting={false} // Loading state handled by modal now
+                isWriting={false}
                 selectedId={selectedIdea?.id || null}
+                scriptLength={scriptLength}
+                setScriptLength={setScriptLength}
+                onSaveProject={handleSaveProject}
             />
         )}
       </main>
