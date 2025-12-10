@@ -1,4 +1,3 @@
-
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { ChannelProfile, VideoIdea, AppStep, SavedProject } from './types';
@@ -7,7 +6,7 @@ import { InputSection } from './components/InputSection';
 import { StyleDashboard } from './components/StyleDashboard';
 import { IdeaSelection } from './components/IdeaSelection';
 import { ScriptModal } from './components/ScriptModal';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Zap } from 'lucide-react';
 
 const App: React.FC = () => {
   const [step, setStep] = useState<AppStep>(AppStep.INPUT);
@@ -53,7 +52,7 @@ const App: React.FC = () => {
         ideas
     };
 
-    const updatedProjects = [newProject, ...savedProjects.filter(p => p.name !== profile.channelName)]; // Avoid dupes by name, prefer recent
+    const updatedProjects = [newProject, ...savedProjects.filter(p => p.name !== profile.channelName)]; 
     setSavedProjects(updatedProjects);
     localStorage.setItem('tubeGeniusProjects', JSON.stringify(updatedProjects));
   };
@@ -103,9 +102,8 @@ const App: React.FC = () => {
     setIsModalOpen(true);
     setScriptContent("");
     setIsScriptGenerating(true);
-    setIsLoading(false); // Stop main loading as modal takes over
+    setIsLoading(false); 
 
-    // Determine Length Constraint
     let effectiveLength = scriptLength;
     if (matchLength) {
         const wordCount = transcript.trim().split(/\s+/).length;
@@ -121,13 +119,13 @@ const App: React.FC = () => {
         }
     } catch (err: any) {
         setError("Failed to generate script from reference. Try again.");
-        setIsModalOpen(false); // Close modal on error to show banner
+        setIsModalOpen(false); 
     } finally {
         setIsScriptGenerating(false);
     }
   };
 
-  // Step 1.75: Direct Text to Audio (No AI Writing)
+  // Step 1.75: Direct Text to Audio
   const handleOpenStudio = (title: string, script: string) => {
     const dummyIdea: VideoIdea = {
         id: `voice-${Date.now()}`,
@@ -140,7 +138,7 @@ const App: React.FC = () => {
     setSelectedIdea(dummyIdea);
     setScriptContent(script);
     setIsModalOpen(true);
-    setIsScriptGenerating(false); // Content is already provided
+    setIsScriptGenerating(false); 
   };
 
   // Step 2: Generate Ideas
@@ -213,26 +211,34 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 pb-20 font-sans">
+    <div className="min-h-screen cinematic-bg text-slate-200 font-sans selection:bg-red-500/30 selection:text-white relative overflow-x-hidden">
+      
+      {/* Parallax Stars Layer - Driven by CSS in index.html */}
+      <div className="star-field fixed inset-0 pointer-events-none z-0"></div>
+      
       {/* Navbar */}
-      <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-2 cursor-pointer" onClick={handleReset}>
-                <div className="w-8 h-8 bg-gradient-to-br from-red-600 to-red-400 rounded-lg flex items-center justify-center font-bold text-white text-lg">
-                    T
+      <nav className="border-b border-white/5 bg-black/50 backdrop-blur-md sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div className="flex items-center gap-3 cursor-pointer group" onClick={handleReset}>
+                <div className="w-10 h-10 relative">
+                    <div className="absolute inset-0 bg-red-600 rounded-xl blur-lg opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-600 to-red-500 rounded-xl flex items-center justify-center font-bold text-white text-xl shadow-inner border border-white/10">
+                        <Zap className="w-5 h-5 fill-current" />
+                    </div>
                 </div>
-                <span className="text-white font-bold text-lg hidden sm:block">TubeGenius AI</span>
+                <span className="text-white font-heading font-bold text-2xl tracking-tight hidden sm:block">TubeGenius<span className="text-red-500">AI</span></span>
             </div>
             {step !== AppStep.INPUT && (
-                <div className="flex items-center gap-4">
-                    <button onClick={handleReset} className="text-slate-400 hover:text-white text-sm transition-colors">
+                <div className="flex items-center gap-6">
+                    <button onClick={handleReset} className="text-slate-400 hover:text-white text-sm font-medium transition-colors hover:scale-105 transform duration-200">
                         New Analysis
                     </button>
                     {profile && (
-                        <div className="flex items-center gap-2">
-                             <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white border border-slate-600">
+                        <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full border border-white/10">
+                             <div className="w-6 h-6 rounded-full bg-gradient-to-r from-red-600 to-orange-500 flex items-center justify-center text-[10px] font-bold text-white shadow-lg">
                                 {profile.channelName.substring(0, 1)}
                              </div>
+                             <span className="text-xs font-medium text-white">{profile.channelName}</span>
                         </div>
                     )}
                 </div>
@@ -242,15 +248,15 @@ const App: React.FC = () => {
 
       {/* Error Banner */}
       {error && (
-        <div className="max-w-md mx-auto mt-4 bg-red-900/50 border border-red-500 text-red-200 px-4 py-3 rounded-lg flex items-center gap-2 animate-bounce-in z-50 relative">
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          <span className="text-sm">{error}</span>
-          <button onClick={() => setError(null)} className="ml-auto hover:text-white">✕</button>
+        <div className="max-w-md mx-auto mt-6 bg-red-500/10 border border-red-500/50 backdrop-blur-md text-red-200 px-6 py-4 rounded-xl flex items-center gap-3 animate-bounce-in z-50 relative shadow-2xl shadow-red-900/20">
+          <AlertCircle className="w-5 h-5 shrink-0 text-red-400" />
+          <span className="text-sm font-medium">{error}</span>
+          <button onClick={() => setError(null)} className="ml-auto hover:text-white transition-colors">✕</button>
         </div>
       )}
 
       {/* Main Content */}
-      <main>
+      <main className="relative z-10">
         {step === AppStep.INPUT && (
             <InputSection 
                 onAnalyze={handleAnalyze} 
