@@ -1,39 +1,123 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TubeGenius AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              border: "var(--border)",
+              input: "var(--input)",
+              ring: "var(--ring)",
+              background: "var(--background)",
+              foreground: "var(--foreground)",
+            }
+          }
+        }
+      }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
       :root {
+        /* --- PREMIUM LIGHT MODE (Apple/Notion Inspired) --- */
+        --bg-primary: #ffffff;
+        --text-primary: #1d1d1f; /* Apple near-black */
+        --text-secondary: #86868b; /* Apple gray */
+        
+        /* Glass & Surfaces - Frosted White */
+        --glass-panel: rgba(255, 255, 255, 0.65);
+        --glass-border: rgba(0, 0, 0, 0.05);
+        --glass-highlight: rgba(255, 255, 255, 0.8);
+        --glass-surface: rgba(255, 255, 255, 0.4);
+        
+        /* Inputs & Navigation */
+        --input-bg: rgba(242, 242, 247, 0.5); /* iOS System Gray 6 */
+        --nav-bg: rgba(255, 255, 255, 0.8);
+        --nav-border: rgba(0, 0, 0, 0.05);
+        --tab-bg: rgba(118, 118, 128, 0.12); /* iOS Segmented Control */
+        
+        /* Accents & Shadows */
+        --accent-glow: rgba(0, 122, 255, 0.1);
+        --shadow-premium: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+        
+        --void-bg: #ffffff;
+        
+        /* Dynamic Blob Colors for Light Mode */
+        --blob-red: rgba(255, 200, 200, 0.5);
+        --blob-blue: rgba(200, 225, 255, 0.5);
+        --blob-purple: rgba(230, 210, 255, 0.5);
+
+        /* Title Gradients (Light Mode) */
+        --gradient-create: linear-gradient(135deg, #3b82f6 0%, #06b6d4 40%, #2563eb 70%, #1d4ed8 100%);
+        --gradient-voice: linear-gradient(135deg, #9333ea 0%, #d946ef 40%, #7c3aed 70%, #6d28d9 100%);
+      }
+      
+      html.dark {
+        /* --- CINEMATIC DARK MODE --- */
+        --bg-primary: #030005;
+        --text-primary: #e2e8f0;
+        --text-secondary: #94a3b8;
+        
+        --glass-panel: rgba(15, 15, 20, 0.6);
         --glass-border: rgba(255, 255, 255, 0.08);
+        --glass-highlight: rgba(255, 255, 255, 0.05);
         --glass-surface: rgba(255, 255, 255, 0.03);
-        --neon-red: #ef4444;
-        --neon-glow: rgba(239, 68, 68, 0.5);
+        
+        --input-bg: rgba(0, 0, 0, 0.4);
+        --nav-bg: rgba(0, 0, 0, 0.5);
+        --nav-border: rgba(255, 255, 255, 0.05);
+        --tab-bg: rgba(0, 0, 0, 0.4);
+        
+        --accent-glow: rgba(239, 68, 68, 0.3);
+        --shadow-premium: 0 20px 50px -10px rgba(0, 0, 0, 0.3);
+        
         --void-bg: #030005;
+        
+        /* Dynamic Blob Colors for Dark Mode */
+        --blob-red: rgba(220, 38, 38, 0.1);
+        --blob-blue: rgba(59, 130, 246, 0.1);
+        --blob-purple: rgba(147, 51, 234, 0.1);
+
+        /* Title Gradients (Dark Mode) */
+        --gradient-create: linear-gradient(135deg, #ffffff 0%, #cceeff 20%, #3b82f6 50%, #60a5fa 80%, #ffffff 100%);
+        --gradient-voice: linear-gradient(135deg, #ffffff 0%, #e9d5ff 20%, #a855f7 50%, #c084fc 80%, #ffffff 100%);
       }
       
       body {
         font-family: 'Inter', sans-serif;
-        background-color: var(--void-bg);
-        color: #e2e8f0;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
         overflow-x: hidden;
+        transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s ease;
       }
 
       h1, h2, h3, h4, .font-heading {
         font-family: 'Outfit', sans-serif;
       }
 
-      /* --- S-TIER CINEMATIC BACKGROUND --- */
+      /* --- CINEMATIC BACKGROUND --- */
       .cinematic-bg {
         background: 
           radial-gradient(circle at 50% 0%, #1a0505 0%, transparent 40%),
           radial-gradient(circle at 80% 20%, #0a0a1a 0%, transparent 30%),
-          #020204;
+          var(--void-bg);
         min-height: 100vh;
         position: relative;
+        transition: background 0.4s ease;
+      }
+
+      /* Premium Light Mode Background */
+      html:not(.dark) .cinematic-bg {
+         background: 
+          radial-gradient(circle at 15% 15%, rgba(255, 228, 225, 0.5) 0%, transparent 50%), /* Misty Rose */
+          radial-gradient(circle at 85% 25%, rgba(230, 240, 255, 0.6) 0%, transparent 50%), /* Alice Blue */
+          radial-gradient(circle at 50% 60%, rgba(255, 250, 240, 0.8) 0%, transparent 60%), /* Floral White */
+          #ffffff;
       }
       
       .star-field {
@@ -47,9 +131,25 @@
         background-size: 200px 200px;
         animation: twinkle 5s infinite;
         opacity: 0.3;
+        transition: opacity 0.4s ease;
       }
 
-      /* --- PREMIUM 3D ORB --- */
+      /* Floating Specs (Dust Motes) for Light Mode */
+      html:not(.dark) .star-field {
+        background-image: 
+          radial-gradient(1.5px 1.5px at 20px 30px, rgba(0,0,0,0.1), rgba(0,0,0,0)),
+          radial-gradient(1.5px 1.5px at 100px 80px, rgba(0,0,0,0.08), rgba(0,0,0,0)),
+          radial-gradient(2px 2px at 150px 150px, rgba(255,100,100,0.05), rgba(0,0,0,0));
+        opacity: 1;
+        animation: floatSpecs 30s infinite linear;
+      }
+
+      @keyframes floatSpecs {
+        from { background-position: 0 0; }
+        to { background-position: 100px 50px; }
+      }
+
+      /* --- 3D ORB --- */
       .orb-scene {
         perspective: 1000px;
         transform-style: preserve-3d;
@@ -76,6 +176,22 @@
           0 0 100px rgba(239, 68, 68, 0.2);
         position: relative;
         z-index: 10;
+        transition: box-shadow 0.4s ease, background 0.4s ease;
+      }
+
+      /* Light Mode Orb - Soft & Glossy */
+      html:not(.dark) .orb-3d {
+        background: radial-gradient(circle at 30% 30%, 
+          rgba(255, 255, 255, 1) 0%, 
+          rgba(255, 220, 220, 1) 30%, 
+          rgba(255, 150, 150, 1) 70%, 
+          rgba(255, 100, 100, 1) 100%
+        );
+        box-shadow: 
+          inset -5px -5px 20px rgba(0,0,0,0.05),
+          inset 10px 10px 30px rgba(255,255,255,0.95),
+          0 10px 40px rgba(255, 100, 100, 0.25),
+          0 0 80px rgba(255, 180, 180, 0.3);
       }
 
       .orb-ring {
@@ -86,6 +202,12 @@
         border-radius: 50%;
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 0 20px rgba(255, 50, 50, 0.2);
+        transition: border-color 0.4s ease, box-shadow 0.4s ease;
+      }
+      
+      html:not(.dark) .orb-ring {
+        border-color: rgba(0, 0, 0, 0.05);
+        box-shadow: 0 0 30px rgba(255, 100, 100, 0.15);
       }
 
       /* --- TEXT FX --- */
@@ -107,6 +229,21 @@
         text-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
       }
 
+      /* Light Mode Text Gradient: Coral -> Magenta -> Violet */
+      html:not(.dark) .text-glow-gradient {
+         background: linear-gradient(
+          135deg, 
+          #ff6b6b 0%, 
+          #d946ef 40%, 
+          #8b5cf6 70%,
+          #4f46e5 100%
+        );
+        -webkit-background-clip: text;
+        background-clip: text;
+        text-shadow: none;
+        font-weight: 800;
+      }
+
       @keyframes textFlow {
         0% { background-position: 0% center; }
         100% { background-position: 300% center; }
@@ -114,29 +251,35 @@
 
       /* --- LIQUID GLASS UI II --- */
       .glass-panel-premium {
-        background: rgba(15, 15, 20, 0.6);
+        background: var(--glass-panel);
         backdrop-filter: blur(24px);
         -webkit-backdrop-filter: blur(24px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--glass-border);
         box-shadow: 
-          0 20px 50px -10px rgba(0, 0, 0, 0.5),
-          inset 0 1px 0 rgba(255, 255, 255, 0.1),
-          inset 0 0 20px rgba(255, 255, 255, 0.02);
+          var(--shadow-premium),
+          inset 0 1px 0 var(--glass-highlight),
+          inset 0 0 20px var(--glass-surface);
+        transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
       }
 
       .glass-input {
-        background: rgba(0, 0, 0, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--input-bg);
+        border: 1px solid var(--glass-border);
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        color: var(--text-primary);
       }
 
       .glass-input:focus-within {
         border-color: rgba(239, 68, 68, 0.6);
-        background: rgba(0, 0, 0, 0.6);
         box-shadow: 
           0 0 0 1px rgba(239, 68, 68, 0.4),
           0 0 40px rgba(239, 68, 68, 0.15);
         transform: translateY(-1px);
+      }
+      
+      html:not(.dark) .glass-input:focus-within {
+         border-color: rgba(239, 68, 68, 0.4);
+         box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
       }
 
       /* --- BUTTONS --- */
@@ -150,12 +293,25 @@
           0 0 20px rgba(255, 255, 255, 0.3),
           inset 0 2px 0 rgba(255, 255, 255, 0.5);
       }
+
+      /* Light Mode Button - Premium White */
+      html:not(.dark) .btn-primary-glow {
+        background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
+        color: #1d1d1f;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(0,0,0,0.05);
+      }
       
       .btn-primary-glow:hover {
         transform: translateY(-2px) scale(1.02);
         box-shadow: 
           0 10px 30px rgba(255, 255, 255, 0.4),
           inset 0 2px 0 rgba(255, 255, 255, 0.5);
+      }
+      
+      html:not(.dark) .btn-primary-glow:hover {
+         background: linear-gradient(135deg, #f9fafb 0%, #e5e7eb 100%);
+         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
       }
 
       /* --- ANIMATIONS --- */
@@ -175,11 +331,40 @@
       @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-      /* --- UTILS --- */
+      /* --- MODE SWITCH ANIMATIONS --- */
+      .mode-enter {
+        animation: modeEnter 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      }
+      
+      @keyframes modeEnter {
+        0% { opacity: 0; transform: translateY(15px) scale(1.03); filter: blur(4px); }
+        100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+      }
+
+      /* Tab Glider */
+      .tab-glider {
+        transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+      }
+
+      /* Button Micro-interactions */
+      .btn-hover-tilt {
+        transition: transform 0.2s ease, color 0.2s ease;
+      }
+      .btn-hover-tilt:hover {
+        transform: perspective(500px) rotateX(2deg) translateY(-1px);
+      }
+      
+      /* Utility Classes for Theming */
+      .text-dynamic { color: var(--text-primary); transition: color 0.4s ease; }
+      .text-secondary-dynamic { color: var(--text-secondary); transition: color 0.4s ease; }
+      .bg-dynamic { background-color: var(--glass-panel); transition: background-color 0.4s ease; }
+      
       .custom-scrollbar::-webkit-scrollbar { width: 6px; }
       .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
       .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+      html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+      html:not(.dark) .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
     </style>
   <script type="importmap">
 {

@@ -6,7 +6,7 @@ import { InputSection } from './components/InputSection';
 import { StyleDashboard } from './components/StyleDashboard';
 import { IdeaSelection } from './components/IdeaSelection';
 import { ScriptModal } from './components/ScriptModal';
-import { AlertCircle, Zap } from 'lucide-react';
+import { AlertCircle, Zap, Sun, Moon } from 'lucide-react';
 
 const App: React.FC = () => {
   const [step, setStep] = useState<AppStep>(AppStep.INPUT);
@@ -16,6 +16,14 @@ const App: React.FC = () => {
   const [profile, setProfile] = useState<ChannelProfile | null>(null);
   const [ideas, setIdeas] = useState<VideoIdea[]>([]);
   
+  // Theme State
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('theme') as 'dark' | 'light' || 'dark';
+    }
+    return 'dark';
+  });
+
   // Script Configuration
   const [scriptLength, setScriptLength] = useState("Standard (approx 800-1200 words)");
   
@@ -27,6 +35,21 @@ const App: React.FC = () => {
 
   // Saved Projects State
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
+
+  // Theme Effect
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -211,13 +234,13 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen cinematic-bg text-slate-200 font-sans selection:bg-red-500/30 selection:text-white relative overflow-x-hidden">
+    <div className="min-h-screen cinematic-bg text-dynamic font-sans selection:bg-red-500/30 selection:text-white relative overflow-x-hidden">
       
-      {/* Parallax Stars Layer - Driven by CSS in index.html */}
+      {/* Parallax Stars Layer */}
       <div className="star-field fixed inset-0 pointer-events-none z-0"></div>
       
       {/* Navbar */}
-      <nav className="border-b border-white/5 bg-black/50 backdrop-blur-md sticky top-0 z-40">
+      <nav className="border-b border-[var(--nav-border)] bg-[var(--nav-bg)] backdrop-blur-md sticky top-0 z-40 transition-colors duration-400">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
             <div className="flex items-center gap-3 cursor-pointer group" onClick={handleReset}>
                 <div className="w-10 h-10 relative">
@@ -226,11 +249,13 @@ const App: React.FC = () => {
                         <Zap className="w-5 h-5 fill-current" />
                     </div>
                 </div>
-                <span className="text-white font-heading font-bold text-2xl tracking-tight hidden sm:block">TubeGenius<span className="text-red-500">AI</span></span>
+                <span className="text-dynamic font-heading font-bold text-2xl tracking-tight hidden sm:block">TubeGenius<span className="text-red-500">AI</span></span>
             </div>
-            {step !== AppStep.INPUT && (
-                <div className="flex items-center gap-6">
-                    <button onClick={handleReset} className="text-slate-400 hover:text-white text-sm font-medium transition-colors hover:scale-105 transform duration-200">
+            
+            <div className="flex items-center gap-6">
+                {step !== AppStep.INPUT && (
+                    <>
+                    <button onClick={handleReset} className="text-secondary-dynamic hover:text-dynamic text-sm font-medium transition-colors hover:scale-105 transform duration-200">
                         New Analysis
                     </button>
                     {profile && (
@@ -238,11 +263,25 @@ const App: React.FC = () => {
                              <div className="w-6 h-6 rounded-full bg-gradient-to-r from-red-600 to-orange-500 flex items-center justify-center text-[10px] font-bold text-white shadow-lg">
                                 {profile.channelName.substring(0, 1)}
                              </div>
-                             <span className="text-xs font-medium text-white">{profile.channelName}</span>
+                             <span className="text-xs font-medium text-dynamic">{profile.channelName}</span>
                         </div>
                     )}
-                </div>
-            )}
+                    </>
+                )}
+                
+                {/* Theme Toggle */}
+                <button 
+                  onClick={toggleTheme}
+                  className="relative p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 transition-all duration-300 hover:scale-110 group"
+                  aria-label="Toggle Theme"
+                >
+                  <div className="relative w-5 h-5">
+                    <Sun className={`w-5 h-5 text-amber-400 absolute inset-0 transform transition-all duration-500 ${theme === 'light' ? 'rotate-0 opacity-100 scale-100' : 'rotate-90 opacity-0 scale-50'}`} />
+                    <Moon className={`w-5 h-5 text-blue-200 absolute inset-0 transform transition-all duration-500 ${theme === 'dark' ? 'rotate-0 opacity-100 scale-100' : '-rotate-90 opacity-0 scale-50'}`} />
+                  </div>
+                  <div className="absolute inset-0 rounded-full bg-white/5 blur-md opacity-0 group-hover:opacity-50 transition-opacity"></div>
+                </button>
+            </div>
         </div>
       </nav>
 
