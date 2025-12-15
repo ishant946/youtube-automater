@@ -1,7 +1,6 @@
-
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { X, Copy, RefreshCw, Save, Loader2, Check, Mic, Play, Download, Volume2, Film, Search, Hash, MessageSquare, Clipboard, Minimize2 } from 'lucide-react';
+import { X, Copy, RefreshCw, Save, Loader2, Check, Mic, Play, Download, Volume2, Film, Search, Hash, MessageSquare, Clipboard, Minimize2, Scissors, Layers } from 'lucide-react';
 import { VideoIdea, VOICES, VoiceOption, ScriptPart, VideoMetadata } from '../types';
 import { generateSpeech, generateVideoMetadata } from '../services/geminiService';
 
@@ -13,6 +12,7 @@ interface ScriptModalProps {
   setContent: (text: string) => void;
   isGenerating: boolean;
   onRegenerate: () => void;
+  initialMode?: 'voice' | 'seo' | 'segment';
 }
 
 export const ScriptModal: React.FC<ScriptModalProps> = ({
@@ -22,18 +22,33 @@ export const ScriptModal: React.FC<ScriptModalProps> = ({
   content,
   setContent,
   isGenerating,
-  onRegenerate
+  onRegenerate,
+  initialMode = 'voice'
 }) => {
   const [copied, setCopied] = useState(false);
-  const [selectedVoice, setSelectedVoice] = useState<VoiceOption>(VOICES[0]);
-  const [activeTab, setActiveTab] = useState<'voice' | 'seo'>('voice');
+  // Default to Kore if available, otherwise first in list
+  const [selectedVoice, setSelectedVoice] = useState<VoiceOption>(
+    VOICES.find(v => v.name === 'Kore') || VOICES[0]
+  );
+  const [activeTab, setActiveTab] = useState<'voice' | 'seo' | 'segment'>('voice');
   const [scriptParts, setScriptParts] = useState<ScriptPart[]>([]);
   const [isProcessingMedia, setIsProcessingMedia] = useState(false);
   const [metadata, setMetadata] = useState<VideoMetadata | null>(null);
   const [isSeoLoading, setIsSeoLoading] = useState(false);
+  const [copiedPartIndex, setCopiedPartIndex] = useState<number | null>(null);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+        setActiveTab(initialMode);
+        // If opening in segment mode, automatically trigger segmentation
+        if (initialMode === 'segment' && content.trim() && scriptParts.length === 0) {
+            handleSegmentOnly();
+        }
+    }
+  }, [isOpen, initialMode]);
 
   useEffect(() => {
     if (isGenerating && bottomRef.current) {
@@ -68,7 +83,7 @@ export const ScriptModal: React.FC<ScriptModalProps> = ({
   };
 
   const splitTextToSegments = (fullText: string): string[] => {
-    const TARGET_LIMIT = 500; 
+    const TARGET_LIMIT = 300; 
     const paragraphs = fullText.split('\n');
     const chunks: string[] = [];
     let currentChunk = '';
@@ -90,6 +105,19 @@ export const ScriptModal: React.FC<ScriptModalProps> = ({
       chunks.push(currentChunk.trim());
     }
     return chunks.length > 0 ? chunks : [fullText];
+  };
+
+  const handleSegmentOnly = () => {
+      if (!content.trim()) return;
+      const textChunks = splitTextToSegments(content);
+      const parts: ScriptPart[] = textChunks.map((text, idx) => ({
+          index: idx,
+          text,
+          audioUrl: null,
+          isAudioLoading: false,
+          audioError: false
+      }));
+      setScriptParts(parts);
   };
 
   const handleGenerateAudio = async () => {
@@ -164,6 +192,12 @@ export const ScriptModal: React.FC<ScriptModalProps> = ({
       navigator.clipboard.writeText(text);
   };
 
+  const copySegment = (text: string, index: number) => {
+      navigator.clipboard.writeText(text);
+      setCopiedPartIndex(index);
+      setTimeout(() => setCopiedPartIndex(null), 1500);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div 
@@ -176,13 +210,17 @@ export const ScriptModal: React.FC<ScriptModalProps> = ({
         {/* Header - HUD Style */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/40 shrink-0 relative">
           <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-red-600/20 border border-red-500/50 flex items-center justify-center">
-                  <Film className="w-5 h-5 text-red-500" />
+              <div className={`w-10 h-10 rounded-lg border flex items-center justify-center ${
+                  activeTab === 'segment' 
+                  ? 'bg-emerald-600/20 border-emerald-500/50' 
+                  : 'bg-red-600/20 border-red-500/50'
+              }`}>
+                  {activeTab === 'segment' ? <Layers className="w-5 h-5 text-emerald-500" /> : <Film className="w-5 h-5 text-red-500" />}
               </div>
               <div>
                 <h3 className="text-xl font-bold text-white line-clamp-1 font-heading">{idea.title}</h3>
                 <p className="text-xs text-slate-400 flex items-center gap-2 uppercase tracking-widest font-semibold">
-                    Production Studio <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse"></span> Live
+                    Production Studio <span className={`w-1 h-1 rounded-full animate-pulse ${activeTab === 'segment' ? 'bg-emerald-500' : 'bg-red-500'}`}></span> Live
                 </p>
               </div>
           </div>
@@ -245,7 +283,17 @@ export const ScriptModal: React.FC<ScriptModalProps> = ({
                             : 'text-slate-500 hover:text-white hover:bg-white/5'
                         }`}
                     >
-                        <Mic className="w-3.5 h-3.5" /> Voice Studio
+                        <Mic className="w-3.5 h-3.5" /> Voice
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('segment')}
+                        className={`flex-1 py-4 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+                            activeTab === 'segment' 
+                            ? 'bg-white/5 text-emerald-400 border-b-2 border-emerald-500' 
+                            : 'text-slate-500 hover:text-white hover:bg-white/5'
+                        }`}
+                    >
+                        <Layers className="w-3.5 h-3.5" /> Split
                     </button>
                     <button 
                         onClick={() => setActiveTab('seo')}
@@ -255,7 +303,7 @@ export const ScriptModal: React.FC<ScriptModalProps> = ({
                             : 'text-slate-500 hover:text-white hover:bg-white/5'
                         }`}
                     >
-                        <Search className="w-3.5 h-3.5" /> SEO Metadata
+                        <Search className="w-3.5 h-3.5" /> SEO
                     </button>
                 </div>
 
@@ -301,7 +349,8 @@ export const ScriptModal: React.FC<ScriptModalProps> = ({
                                 </button>
                             </div>
                         </div>
-
+                        
+                        {/* Audio List */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                             {scriptParts.length === 0 && !isProcessingMedia && (
                                 <div className="h-full flex flex-col items-center justify-center text-slate-600 space-y-4 opacity-50">
@@ -311,8 +360,9 @@ export const ScriptModal: React.FC<ScriptModalProps> = ({
                                     <p className="text-xs font-mono">Awaiting Audio Generation...</p>
                                 </div>
                             )}
-
-                            {scriptParts.map((part) => (
+                            
+                            {/* Reuse the rendering logic for audio parts */}
+                             {scriptParts.map((part) => (
                                 <div key={part.index} className="bg-white/5 rounded-xl border border-white/5 p-4 animate-fade-in hover:bg-white/10 transition-colors group">
                                     <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
                                         <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider">Sequence 0{part.index + 1}</span>
@@ -328,7 +378,6 @@ export const ScriptModal: React.FC<ScriptModalProps> = ({
                                             )}
                                         </div>
                                     </div>
-
                                     <div>
                                         {part.isAudioLoading ? (
                                             <div className="h-8 bg-black/40 rounded w-full flex items-center justify-center relative overflow-hidden">
@@ -351,14 +400,70 @@ export const ScriptModal: React.FC<ScriptModalProps> = ({
                                             </div>
                                         )}
                                     </div>
-                                    
-                                    <div className="mt-3 text-[10px] text-slate-500 line-clamp-2 font-mono leading-relaxed">
-                                        {part.text}
-                                    </div>
+                                    <div className="mt-3 text-[10px] text-slate-500 line-clamp-2 font-mono leading-relaxed">{part.text}</div>
                                 </div>
                             ))}
                         </div>
                     </div>
+                )}
+
+                {/* SEGMENTER PANEL */}
+                {activeTab === 'segment' && (
+                     <div className="flex flex-col h-full overflow-hidden">
+                        <div className="p-6 border-b border-white/5 shrink-0 bg-emerald-500/5">
+                            <h4 className="text-sm font-bold text-emerald-400 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                                <Scissors className="w-4 h-4" /> Smart Splitter
+                            </h4>
+                            <button
+                                onClick={handleSegmentOnly}
+                                disabled={isGenerating || !content.trim()}
+                                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-white/5 disabled:text-slate-600 text-white px-4 py-3 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(16,185,129,0.4)]"
+                            >
+                                <Layers className="w-4 h-4" />
+                                Reprocess Segments
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                            {scriptParts.length === 0 && (
+                                <div className="h-full flex flex-col items-center justify-center text-slate-600 space-y-4 opacity-50">
+                                    <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-700 flex items-center justify-center">
+                                        <Scissors className="w-6 h-6" />
+                                    </div>
+                                    <p className="text-xs font-mono">Ready to Split Content</p>
+                                </div>
+                            )}
+
+                            {scriptParts.map((part) => (
+                                <div key={part.index} className="bg-white/5 rounded-lg border border-white/5 p-3 animate-fade-in hover:bg-white/10 transition-colors flex items-center gap-3 group">
+                                    <div className="shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded bg-emerald-500/5 border border-emerald-500/10 text-emerald-500/80">
+                                        <span className="text-xs font-bold">{part.index + 1}</span>
+                                    </div>
+                                    
+                                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                        <div className="text-[10px] font-mono text-slate-500 mb-0.5 uppercase tracking-wide">
+                                            {part.text.split(/\s+/).length} words
+                                        </div>
+                                        <p className="text-xs text-slate-300 font-mono truncate opacity-90">
+                                            {part.text}
+                                        </p>
+                                    </div>
+
+                                    <button 
+                                        onClick={() => copySegment(part.text, part.index)}
+                                        className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                                            copiedPartIndex === part.index 
+                                            ? 'bg-emerald-500 text-white border-emerald-500' 
+                                            : 'bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border-white/10'
+                                        }`}
+                                    >
+                                        {copiedPartIndex === part.index ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                        {copiedPartIndex === part.index ? 'Copied' : 'Copy'}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                     </div>
                 )}
 
                 {/* SEO PANEL */}

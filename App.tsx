@@ -32,6 +32,7 @@ const App: React.FC = () => {
   const [selectedIdea, setSelectedIdea] = useState<VideoIdea | null>(null);
   const [scriptContent, setScriptContent] = useState("");
   const [isScriptGenerating, setIsScriptGenerating] = useState(false);
+  const [modalMode, setModalMode] = useState<'voice' | 'seo' | 'segment'>('voice');
 
   // Saved Projects State
   const [savedProjects, setSavedProjects] = useState<SavedProject[]>([]);
@@ -122,6 +123,7 @@ const App: React.FC = () => {
     };
     
     setSelectedIdea(dummyIdea);
+    setModalMode('voice');
     setIsModalOpen(true);
     setScriptContent("");
     setIsScriptGenerating(true);
@@ -148,18 +150,19 @@ const App: React.FC = () => {
     }
   };
 
-  // Step 1.75: Direct Text to Audio
-  const handleOpenStudio = (title: string, script: string) => {
+  // Step 1.75: Direct Text to Audio OR Segmenter
+  const handleOpenStudio = (title: string, script: string, mode: 'voice' | 'segment' = 'voice') => {
     const dummyIdea: VideoIdea = {
-        id: `voice-${Date.now()}`,
+        id: `${mode}-${Date.now()}`,
         title: title,
-        hook: 'Direct Text to Voice',
+        hook: mode === 'voice' ? 'Direct Text to Voice' : 'Smart Text Segmentation',
         predictedCTR: 'N/A',
         reasoning: 'User provided script'
     };
     
     setSelectedIdea(dummyIdea);
     setScriptContent(script);
+    setModalMode(mode);
     setIsModalOpen(true);
     setIsScriptGenerating(false); 
   };
@@ -182,7 +185,7 @@ const App: React.FC = () => {
   // Step 3: Stream Script
   const generateScript = async (idea: VideoIdea) => {
     if (!profile) {
-        if (idea.id.startsWith('manual-') || idea.id.startsWith('voice-')) {
+        if (idea.id.startsWith('manual-') || idea.id.startsWith('voice-') || idea.id.startsWith('segment-')) {
              return; 
         }
         return; 
@@ -209,13 +212,14 @@ const App: React.FC = () => {
 
   const handleSelectIdea = (idea: VideoIdea) => {
     setSelectedIdea(idea);
+    setModalMode('voice');
     setIsModalOpen(true);
     generateScript(idea);
   };
 
   const handleRegenerate = () => {
     if (selectedIdea) {
-        if (selectedIdea.id.startsWith('manual-') || selectedIdea.id.startsWith('voice-')) {
+        if (selectedIdea.id.startsWith('manual-') || selectedIdea.id.startsWith('voice-') || selectedIdea.id.startsWith('segment-')) {
             setError("Regeneration is currently only available for Channel Analysis workflows.");
             return;
         }
@@ -338,6 +342,7 @@ const App: React.FC = () => {
         setContent={setScriptContent}
         isGenerating={isScriptGenerating}
         onRegenerate={handleRegenerate}
+        initialMode={modalMode}
       />
     </div>
   );

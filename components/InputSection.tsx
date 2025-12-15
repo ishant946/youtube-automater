@@ -1,12 +1,12 @@
 import * as React from 'react';
 import { useState } from 'react';
-import { Search, Youtube, Loader2, PenTool, History, ChevronRight, Trash2, Scale, Mic, ArrowRight, Zap, Sparkles, Play } from 'lucide-react';
+import { Search, Youtube, Loader2, PenTool, History, ChevronRight, Trash2, Scale, Mic, ArrowRight, Zap, Sparkles, Play, Scissors, Layers } from 'lucide-react';
 import { SavedProject } from '../types';
 
 interface InputSectionProps {
   onAnalyze: (input: string) => void;
   onCreateScript: (topic: string, transcript: string, matchLength: boolean) => void;
-  onOpenStudio: (title: string, script: string) => void;
+  onOpenStudio: (title: string, script: string, mode?: 'voice' | 'segment') => void;
   onLoadProject: (project: SavedProject) => void;
   savedProjects: SavedProject[];
   onDeleteProject: (id: string) => void;
@@ -22,7 +22,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
     onDeleteProject,
     isLoading 
 }) => {
-  const [activeTab, setActiveTab] = useState<'analyze' | 'create' | 'voice'>('analyze');
+  const [activeTab, setActiveTab] = useState<'analyze' | 'create' | 'voice' | 'segment'>('analyze');
   
   // Form States
   const [input, setInput] = useState('');
@@ -31,6 +31,8 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const [matchLength, setMatchLength] = useState(false);
   const [voiceTitle, setVoiceTitle] = useState('');
   const [voiceScript, setVoiceScript] = useState('');
+  const [segTitle, setSegTitle] = useState('');
+  const [segScript, setSegScript] = useState('');
 
   const handleAnalyzeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,13 +46,19 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
   const handleVoiceSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (voiceTitle.trim() && voiceScript.trim()) onOpenStudio(voiceTitle, voiceScript);
+    if (voiceTitle.trim() && voiceScript.trim()) onOpenStudio(voiceTitle, voiceScript, 'voice');
   };
+
+  const handleSegmentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (segTitle.trim() && segScript.trim()) onOpenStudio(segTitle, segScript, 'segment');
+  }
 
   const TABS = [
     { id: 'analyze', label: 'Channel DNA', icon: Youtube, desc: 'Viral DNA Decoder', color: 'text-red-500' },
     { id: 'create', label: 'Script Writer', icon: PenTool, desc: 'Hyper Script Architect', color: 'text-blue-500' },
     { id: 'voice', label: 'Voice Studio', icon: Mic, desc: 'Neural Voice Synthesizer', color: 'text-purple-500' },
+    { id: 'segment', label: 'Smart Splitter', icon: Scissors, desc: 'Intelligent Script Chunker', color: 'text-emerald-500' },
   ] as const;
 
   const activeIndex = TABS.findIndex(t => t.id === activeTab);
@@ -67,6 +75,8 @@ export const InputSection: React.FC<InputSectionProps> = ({
                 ? 'var(--blob-blue)' 
                 : activeTab === 'voice' 
                 ? 'var(--blob-purple)' 
+                : activeTab === 'segment'
+                ? 'var(--blob-emerald)'
                 : 'var(--blob-red)' 
         }}
       ></div>
@@ -91,14 +101,24 @@ export const InputSection: React.FC<InputSectionProps> = ({
         
         {/* Floor Reflection */}
         <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-40 h-10 blur-xl rounded-[100%] opacity-60 animate-pulse transition-colors duration-500"
-             style={{ background: activeTab === 'create' ? 'rgba(59, 130, 246, 0.3)' : activeTab === 'voice' ? 'rgba(147, 51, 234, 0.3)' : 'rgba(239, 68, 68, 0.3)' }}
+             style={{ 
+               background: activeTab === 'create' ? 'rgba(59, 130, 246, 0.3)' 
+                         : activeTab === 'voice' ? 'rgba(147, 51, 234, 0.3)' 
+                         : activeTab === 'segment' ? 'rgba(16, 185, 129, 0.3)'
+                         : 'rgba(239, 68, 68, 0.3)' 
+             }}
         ></div>
       </div>
 
       {/* --- HEADLINE --- */}
       <div key={`text-${activeTab}`} className="text-center mb-12 max-w-4xl z-10 mode-enter">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/50 dark:bg-white/5 border border-white/20 dark:border-white/10 mb-6 backdrop-blur-md shadow-[0_0_20px_rgba(0,0,0,0.05)] dark:shadow-[0_0_20px_rgba(255,255,255,0.05)]">
-            <span className={`w-1.5 h-1.5 rounded-full animate-pulse shadow-[0_0_10px_currentColor] transition-colors duration-500 ${activeTab === 'create' ? 'bg-blue-500 text-blue-500' : activeTab === 'voice' ? 'bg-purple-500 text-purple-500' : 'bg-red-500 text-red-500'}`}></span>
+            <span className={`w-1.5 h-1.5 rounded-full animate-pulse shadow-[0_0_10px_currentColor] transition-colors duration-500 ${
+              activeTab === 'create' ? 'bg-blue-500 text-blue-500' 
+              : activeTab === 'voice' ? 'bg-purple-500 text-purple-500' 
+              : activeTab === 'segment' ? 'bg-emerald-500 text-emerald-500'
+              : 'bg-red-500 text-red-500'
+            }`}></span>
             <span className="text-[10px] font-bold text-secondary-dynamic tracking-[0.2em] uppercase">AI Orchestration Engine</span>
         </div>
         
@@ -106,6 +126,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
             {activeTab === 'analyze' && <span className="text-glow-gradient">Viral DNA</span>}
             {activeTab === 'create' && <span className="text-glow-gradient" style={{ backgroundImage: 'var(--gradient-create)' }}>Hyper Script</span>}
             {activeTab === 'voice' && <span className="text-glow-gradient" style={{ backgroundImage: 'var(--gradient-voice)' }}>Neural Voice</span>}
+            {activeTab === 'segment' && <span className="text-glow-gradient" style={{ backgroundImage: 'var(--gradient-segment)' }}>Smart Splitter</span>}
             <span className="block text-4xl md:text-5xl text-dynamic mt-2 font-light tracking-normal opacity-90">
                 {TABS[activeIndex].desc.split(' ').slice(2).join(' ')}
             </span>
@@ -116,8 +137,8 @@ export const InputSection: React.FC<InputSectionProps> = ({
       <div className="w-full max-w-2xl z-20">
         
         {/* Tab Switcher - Glider */}
-        <div className="flex justify-center mb-10">
-            <div className="relative p-1.5 bg-[var(--tab-bg)] border border-[var(--glass-border)] rounded-2xl backdrop-blur-xl flex w-full max-w-md shadow-2xl transition-all hover:scale-[1.01] hover:shadow-red-500/10">
+        <div className="flex justify-center mb-10 w-full">
+            <div className="relative p-1.5 bg-[var(--tab-bg)] border border-[var(--glass-border)] rounded-2xl backdrop-blur-xl flex w-full shadow-2xl transition-all hover:scale-[1.01] hover:shadow-red-500/10 overflow-hidden">
                 {/* Animated Background Pill */}
                 <div 
                     className="absolute top-1.5 bottom-1.5 rounded-xl bg-white dark:bg-white/10 border border-black/5 dark:border-white/10 shadow-lg dark:shadow-[0_0_20px_rgba(255,255,255,0.1)] tab-glider z-0 overflow-hidden"
@@ -135,12 +156,13 @@ export const InputSection: React.FC<InputSectionProps> = ({
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
-                        className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-wider transition-colors duration-300 btn-hover-tilt ${
+                        className={`relative z-10 flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 py-3 px-1 text-[10px] md:text-xs font-bold uppercase tracking-wider transition-colors duration-300 btn-hover-tilt ${
                             activeTab === tab.id ? 'text-black dark:text-white' : 'text-secondary-dynamic hover:text-dynamic'
                         }`}
                     >
                         <tab.icon className={`w-3.5 h-3.5 transition-colors duration-300 ${activeTab === tab.id ? tab.color : 'text-current opacity-70'}`} />
-                        <span>{tab.label}</span>
+                        <span className="hidden md:inline">{tab.label}</span>
+                        <span className="md:hidden">{tab.label.split(' ')[0]}</span>
                     </button>
                 ))}
             </div>
@@ -152,6 +174,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
             <div className={`absolute -inset-[1px] bg-gradient-to-r rounded-3xl opacity-0 group-hover:opacity-100 transition duration-700 blur-sm -z-10 ${
                 activeTab === 'create' ? 'from-blue-500/30 via-white/10 to-blue-500/30' : 
                 activeTab === 'voice' ? 'from-purple-500/30 via-white/10 to-purple-500/30' :
+                activeTab === 'segment' ? 'from-emerald-500/30 via-white/10 to-emerald-500/30' :
                 'from-red-500/30 via-white/10 to-red-500/30'
             }`}></div>
 
@@ -265,6 +288,39 @@ export const InputSection: React.FC<InputSectionProps> = ({
                                 >
                                     <Mic className="w-3.5 h-3.5" />
                                     OPEN STUDIO
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                )}
+
+                {/* SEGMENTER FORM */}
+                {activeTab === 'segment' && (
+                    <div key="segment" className="mode-enter">
+                        <form onSubmit={handleSegmentSubmit} className="flex flex-col gap-4">
+                            <input
+                                type="text"
+                                value={segTitle}
+                                onChange={(e) => setSegTitle(e.target.value)}
+                                placeholder="Content Title..."
+                                className="w-full h-14 bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-xl px-5 text-dynamic placeholder:text-slate-400 focus:border-emerald-500/50 outline-none transition-all focus:shadow-[0_0_30px_rgba(16,185,129,0.1)]"
+                                disabled={isLoading}
+                            />
+                            <textarea
+                                value={segScript}
+                                onChange={(e) => setSegScript(e.target.value)}
+                                placeholder="Paste long content here to split into segments..."
+                                className="w-full h-32 bg-[var(--input-bg)] border border-[var(--glass-border)] rounded-xl px-5 py-4 text-dynamic placeholder:text-slate-400 focus:border-emerald-500/50 outline-none transition-all resize-none custom-scrollbar focus:shadow-[0_0_30px_rgba(16,185,129,0.1)]"
+                                disabled={isLoading}
+                            />
+                            <div className="flex justify-end">
+                                <button
+                                    type="submit"
+                                    disabled={isLoading || !segTitle.trim() || !segScript.trim()}
+                                    className="bg-emerald-600 hover:bg-emerald-500 text-white h-10 px-6 rounded-lg font-bold text-xs tracking-wide uppercase shadow-[0_0_15px_rgba(16,185,129,0.4)] hover:shadow-[0_0_25px_rgba(16,185,129,0.6)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 hover:scale-105 active:scale-95"
+                                >
+                                    <Scissors className="w-3.5 h-3.5" />
+                                    SPLIT CONTENT
                                 </button>
                             </div>
                         </form>
