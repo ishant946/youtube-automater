@@ -83,7 +83,7 @@ export const ScriptModal: React.FC<ScriptModalProps> = ({
   };
 
   const splitTextToSegments = (fullText: string): string[] => {
-    const TARGET_LIMIT = 300; 
+    const TARGET_LIMIT = 200; 
     const paragraphs = fullText.split('\n');
     const chunks: string[] = [];
     let currentChunk = '';
